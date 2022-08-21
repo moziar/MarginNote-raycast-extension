@@ -1,0 +1,43 @@
+{
+  "name": "marinnote",
+  "title": "MarginNote",
+  "description": "Search notebook within the MarginNote",
+  "icon": "marginnote.png",
+  "author": "MarginNote",
+  "contributors": [
+    "ourongxing"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "index",
+      "title": "Search Notebook",
+      "subtitle": "MarginNote",
+      "description": "Search notebook within the MarginNote",
+      "mode": "view"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.39.1",
+    "better-sqlite3": "^7.6.2",
+    "run-applescript": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "~18.7.8",
+    "@types/react": "^18.0.17",
+    "@typescript-eslint/eslint-plugin": "^5.33.1",
+    "@typescript-eslint/parser": "^5.33.1",
+    "eslint": "^8.22.0",
+    "eslint-config-prettier": "^8.5.0",
+    "prettier": "2.7.1",
+    "react-devtools": "^4.25.0",
+    "typescript": "^4.7.4"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "lint": "ray lint",
+    "fix-lint": "ray lint --fix"
+  }
+}
