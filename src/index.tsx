@@ -4,21 +4,12 @@ import {
   closeMainWindow,
   Icon,
   Action,
-  showToast,
-  Toast,
   LocalStorage,
   Clipboard
 } from "@raycast/api"
 import { useEffect, useState } from "react"
 import { runAppleScript } from "run-applescript"
-import os, { devNull } from "os"
 import { Notebook, State } from "./typing"
-import { dateFormat, getLocalDateFromDB } from "./utils"
-import { readFileSync } from "fs"
-import initSqlJs, { Database, ParamsObject } from "sql.js"
-import path from "path"
-import open from "open"
-import { useDatebase } from "./hooks"
 
 export default function Command() {
   const [state, setState] = useState<State>({
@@ -26,28 +17,53 @@ export default function Command() {
     loading: true
   })
 
-  const [db, error] = useDatebase()
-
   async function openNotebook(id: string) {
     await closeMainWindow()
-    open(`marginnote3app://notebook/${id}`)
+    const script = `
+    on openMN()
+      tell application "MarginNote 3" to activate
+      delay 3
+      tell application "System Events"
+        tell process "MarginNote 3"
+          key code 36
+        end tell
+      end tell
+      delay 0.5
+      open location "marginnote3app://notebook/${id}"
+    end openMN
+
+    on isRunning(appName)
+      tell application "System Events"
+        return (name of processes contains appName)
+      end tell
+    end isRunning
+
+    on isActive(appName)
+      tell application "System Events"
+        return (name of first process whose frontmost is true) contains appName
+      end tell
+    end isActive
+
+
+    if isRunning("MarginNote 3") and not isActive("MarginNote 3") then
+      tell application "MarginNote 3" to activate
+      tell application "System Events"
+        tell process "MarginNote 3"
+          key code 36
+        end tell
+      end tell
+      delay 0.5
+      open location "marginnote3app://notebook/${id}"
+    else if isRunning("MarginNote 3") then
+      open location "marginnote3app://notebook/${id}"
+    else
+      openMN()
+    end if
+    `
+    runAppleScript(script)
   }
 
-  async function checkCached() {
-    const cache = (await LocalStorage.getItem("mn-notebookids")) as string
-    if (cache) {
-      setData(cache.split(", "))
-    }
-    setData(await getNotebookids())
-  }
-
-  function setData(nds: string[]) {
-    setState({
-      // @ts-ignore
-      notebooks: nds.map(k => db!.getNotebook(k)).filter(k => k),
-      loading: false
-    })
-  }
+  async function checkCached() {}
 
   async function getNotebookids() {
     const script = `
@@ -65,51 +81,75 @@ export default function Command() {
     return res.split(", ")
   }
 
-  useEffect(() => {
-    if (db) checkCached()
-  }, [db])
-
-  if (error) {
-    showToast(Toast.Style.Failure, "Something went wrong", error.message)
+  async function fetchData() {
+    const script = `
+tell application "MarginNote 3"
+	set res to {}
+	set nbs to (search notebook "" type MindMapNotebook)
+	repeat with n in nbs
+		set d to last visit of n
+		set t to {short date string of d, " ", time string of d}
+		set end of res to {id of n, title of n, get t as string}
+	end repeat
+	return res
+end tell
+    `
+    const res = (await runAppleScript(script)).split(", ")
+    const data = res
+      .reduce((acc, cur, i) => {
+        switch (i % 3) {
+          case 0:
+            acc.push({
+              id: cur,
+              title: "",
+              lastVisit: ""
+            })
+            break
+          case 1:
+            acc[acc.length - 1].title = cur
+            break
+          case 2:
+            acc[acc.length - 1].lastVisit = cur
+        }
+        return acc
+      }, [] as Notebook[])
+      .sort((m, n) => (m.lastVisit < n.lastVisit ? 1 : -1))
+    setState({
+      notebooks: data,
+      loading: false
+    })
   }
 
+  useEffect(() => {
+    fetchData()
+  }, [])
+
   const today = new Date()
-  const [day, week, month, year] = [
+  const [day, month, year] = [
     today.getDate(),
-    today.getDay(),
-    today.getMonth(),
+    today.getMonth() + 1,
     today.getFullYear()
   ]
+
   return (
     <List isLoading={state.loading} searchBarPlaceholder="搜索笔记本">
       {state.notebooks
-        .sort((m, n) => n.lastVisit.getTime() - m.lastVisit.getTime())
-        // today, yesterday, this week, this month, this year, older
         .reduce(
           (acc, cur) => {
-            const [d, w, m, y] = [
-              cur.lastVisit.getDate(),
-              cur.lastVisit.getDay(),
-              cur.lastVisit.getMonth(),
-              cur.lastVisit.getFullYear()
-            ]
-            if (y === year && m === month && w === week && d === day) {
+            const [y, m, d] = cur.lastVisit
+              .match(/(\d+)\/(\d+)\/(\d+) /)!
+              .slice(1, 4)
+              .map(k => Number(k))
+            if (y === year && m === month && d === day) {
               acc[0].push(cur)
-            } else if (
-              y === year &&
-              m === month &&
-              w === week &&
-              d === day - 1
-            ) {
+            } else if (y === year && m === month && d === day - 1) {
               acc[1].push(cur)
-            } else if (y === year && m === month && w === week) {
-              acc[2].push(cur)
             } else if (y === year && m === month) {
-              acc[3].push(cur)
+              acc[2].push(cur)
             } else if (y === year) {
-              acc[4].push(cur)
+              acc[3].push(cur)
             } else {
-              acc[5].push(cur)
+              acc[4].push(cur)
             }
             return acc
           },
@@ -126,7 +166,6 @@ export default function Command() {
           const sections = [
             "today",
             "yesterday",
-            "this week",
             "this month",
             "this year",
             "older"
@@ -139,8 +178,8 @@ export default function Command() {
                   key={i * 100 + j}
                   icon="marginnote.png"
                   title={k.title}
-                  subtitle={dateFormat(k.lastVisit)}
-                  accessoryTitle={k.tags.join(" ")}
+                  // subtitle={k.lastVisit}
+                  // accessoryTitle={k.lastVisit}
                   actions={
                     <ActionPanel title="Actions">
                       <Action

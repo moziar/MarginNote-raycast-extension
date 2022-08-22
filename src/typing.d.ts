@@ -1,9 +1,7 @@
 export interface Notebook {
   id: string
   title: string
-  tags: string[]
-  created: Date
-  lastVisit: Date
+  lastVisit: string
 }
 
 export interface State {
