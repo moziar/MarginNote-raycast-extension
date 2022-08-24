@@ -19,3 +19,10 @@ export interface SearchDocState {
   loading: boolean
   error?: Error
 }
+
+export interface Preferences {
+  skipAlert: boolean
+  waitingTime: "2" | "3" | "4" | "5" | "6"
+  folderDepth: "2" | "3" | "4" | "5" | "6"
+  ignorePattern: string
+}

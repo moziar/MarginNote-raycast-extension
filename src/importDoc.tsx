@@ -6,31 +6,35 @@ import {
   trash,
   LocalStorage,
   confirmAlert,
+  getPreferenceValues,
   showToast
 } from "@raycast/api"
 import { homedir } from "os"
 import { useEffect, useState } from "react"
 import { runAppleScriptSync } from "run-applescript"
 import fg, { Entry } from "fast-glob"
-import { Doc, SearchDocState } from "./typings"
+import { Doc, Preferences, SearchDocState } from "./typings"
 import { copyFile, existsSync, PathLike, statSync } from "fs-extra"
 import { isRunning, openMN, restartMN } from "./utils/applescript"
 
 const home = homedir()
 const docPath = `${home}/Library/Containers/QReader.MarginStudyMac/Data/Documents`
+const preferences = getPreferenceValues<Preferences>()
 
 async function fetchData(): Promise<Doc[]> {
+  const ignore = [
+    "**/node_modules/**/*",
+    "**/.git/**/*",
+    "**/*.app/**/*",
+    "**/*.marginbackupall/**/*"
+  ]
+  if (preferences.ignorePattern) ignore.push(preferences.ignorePattern)
   return (
     await fg([`${home}/**/*.{pdf,epub}`], {
-      deep: 5,
+      deep: Number(preferences.folderDepth),
       onlyFiles: true,
       followSymbolicLinks: false,
-      ignore: [
-        "**/node_modules/**/*",
-        "**/.git/**/*",
-        "**/*.app/**/*",
-        "**/*.marginbackupall/**/*"
-      ],
+      ignore,
       suppressErrors: true,
       objectMode: true
     })
@@ -112,6 +116,7 @@ export default function () {
   const [selectedList, setSelectedList] = useState<number[]>([])
   const folders = getAllFolder()
 
+  console.log(preferences)
   async function checkCache() {
     const cache = (await LocalStorage.getItem("marginnote-docs")) as string
     let docs: Doc[]

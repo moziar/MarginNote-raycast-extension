@@ -1,4 +1,6 @@
+import { getPreferenceValues } from "@raycast/api"
 import { runAppleScript } from "run-applescript"
+import { Preferences } from "../typings"
 
 export async function isRunning(appName: string) {
   try {
@@ -14,12 +16,13 @@ export async function isRunning(appName: string) {
   }
 }
 
-export async function restartMN(skipAlert = true) {
+export async function restartMN() {
+  const { skipAlert, waitingTime } = getPreferenceValues<Preferences>()
   const script = `
     on openMN()
       tell application "MarginNote 3" to activate
       if ${skipAlert} then
-        delay 3
+        delay ${waitingTime}
         tell application "System Events"
           tell process "MarginNote 3"
             key code 36
@@ -57,11 +60,12 @@ export async function restartMN(skipAlert = true) {
   await runAppleScript(script)
 }
 
-export async function openMN(skipAlert = true) {
+export async function openMN() {
+  const { skipAlert, waitingTime } = getPreferenceValues<Preferences>()
   const script = `
     tell application "MarginNote 3" to activate
     if ${skipAlert} then
-      delay 3
+      delay ${waitingTime}
       tell application "System Events"
         tell process "MarginNote 3"
           key code 36
