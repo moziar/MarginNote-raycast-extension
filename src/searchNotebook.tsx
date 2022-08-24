@@ -1,14 +1,27 @@
-import { ActionPanel, List, closeMainWindow, Icon, Action } from "@raycast/api"
+import {
+  ActionPanel,
+  List,
+  closeMainWindow,
+  Icon,
+  Action,
+  Detail,
+  environment
+} from "@raycast/api"
 import { readFileSync } from "fs"
 import { homedir } from "os"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { runAppleScript } from "run-applescript"
+import { pathToFileURL } from "url"
 import { Notebook, NotebookFilter, State } from "./typings"
 
-const filePath = `${homedir()}/Library/Containers/QReader.MarginStudyMac/Data/Library/MarginNote Extensions/marginnote.extension.ohmymn/raycast.json`
+const dataPath = `${homedir()}/Library/Containers/QReader.MarginStudyMac/Data/Library/MarginNote Extensions/marginnote.extension.ohmymn/raycast.json`
 async function openNotebook(id: string) {
   await closeMainWindow()
   const script = `
+    on openNotebook()
+      open location "marginnote3app://notebook/${id}"
+    end openNotebook
+
     on openMN()
       tell application "MarginNote 3" to activate
       delay 3
@@ -18,7 +31,7 @@ async function openNotebook(id: string) {
         end tell
       end tell
       delay 0.5
-      open location "marginnote3app://notebook/${id}"
+      openNotebook()
     end openMN
 
     on isRunning(appName)
@@ -36,15 +49,16 @@ async function openNotebook(id: string) {
 
     if isRunning("MarginNote 3") and not isActive("MarginNote 3") then
     	tell application "MarginNote 3" to activate
-      open location "marginnote3app://notebook/${id}"
+      openNotebook()
     else if isRunning("MarginNote 3") then
-      open location "marginnote3app://notebook/${id}"
+      openNotebook()
     else
       openMN()
     end if
     `
   runAppleScript(script)
 }
+
 const today = new Date()
 const [day, month, year] = [
   today.getDate(),
@@ -69,13 +83,11 @@ const notebookType: { key: NotebookFilter; title: string }[] = [
 
 function fetchData() {
   try {
-    const data = readFileSync(filePath, "utf8")
-    if (data) {
-      const notebooks = JSON.parse(data) as Notebook[]
-      return notebooks.sort((m, n) => (m.lastVisit < n.lastVisit ? 1 : -1))
-    }
+    const data = readFileSync(dataPath, "utf8")
+    const notebooks = JSON.parse(data) as Notebook[]
+    return notebooks.sort((m, n) => (m.lastVisit < n.lastVisit ? 1 : -1))
   } catch (error) {
-    console.log(error)
+    console.log("not found raycast.json")
   }
 }
 
@@ -94,7 +106,7 @@ export default function () {
     })
   }, [])
 
-  return (
+  return state.notebooks ? (
     <List
       isLoading={state.loading}
       searchBarPlaceholder="Search Notebook in MarginNote"
@@ -166,7 +178,13 @@ export default function () {
                     key={i * 100 + j}
                     icon={k.type === 1 ? "mindmap.png" : "flashcard.png"}
                     title={k.title}
-                    accessoryTitle={k.type === 1 ? "MindMap" : "FlashCard"}
+                    accessoryTitle={
+                      k.type === 1
+                        ? "MindMap"
+                        : k.type === 2
+                        ? "FlashCard"
+                        : "Document"
+                    }
                     actions={<Actions notebook={k} />}
                   />
                 ))}
@@ -174,6 +192,8 @@ export default function () {
           )
         })}
     </List>
+  ) : (
+    <NotFound />
   )
 }
 
@@ -200,5 +220,23 @@ const Actions: React.FC<{ notebook: Notebook }> = ({ notebook }) => {
         content={`[${notebook.title}](marginnote3app://notebook/${notebook.id})`}
       />
     </ActionPanel>
+  )
+}
+
+const NotFound = () => {
+  const image = pathToFileURL(`${environment.assetsPath}/followme.gif`).href
+  return (
+    <Detail
+      markdown={`# ⚠️ Not found data source from MarginNote.\n ## Please install OhMyMN v4.1.0 and Follow the GIF \n > Unfortunately, OhMyMN currently only supports Chinese. English will be supported later. \n\n![](${image})`}
+      actions={
+        <ActionPanel title="Actions">
+          <Action.OpenInBrowser
+            title="Download OhMyMN"
+            icon={Icon.AppWindow}
+            url="https://bbs.marginnote.cn/t/topic/20501"
+          />
+        </ActionPanel>
+      }
+    />
   )
 }
