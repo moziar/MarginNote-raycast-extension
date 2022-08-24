@@ -7,12 +7,12 @@ import {
   Detail,
   environment
 } from "@raycast/api"
-import { readFileSync } from "fs"
+import { existsSync, readJsonSync } from "fs-extra"
 import { homedir } from "os"
 import React, { useEffect, useState } from "react"
 import { runAppleScript } from "run-applescript"
 import { pathToFileURL } from "url"
-import { Notebook, NotebookFilter, State } from "./typings"
+import { Notebook, NotebookFilter, SearchNotebookState } from "./typings"
 
 const dataPath = `${homedir()}/Library/Containers/QReader.MarginStudyMac/Data/Library/MarginNote Extensions/marginnote.extension.ohmymn/raycast.json`
 async function openNotebook(id: string) {
@@ -73,26 +73,26 @@ const notebookType: { key: NotebookFilter; title: string }[] = [
   },
   {
     key: "mindmap",
-    title: "Mindmap"
+    title: "MindMap"
   },
   {
     key: "flashcard",
-    title: "Flashcard"
+    title: "FlashCard"
   }
 ]
 
 function fetchData() {
   try {
-    const data = readFileSync(dataPath, "utf8")
-    const notebooks = JSON.parse(data) as Notebook[]
+    if (!existsSync(dataPath)) throw "not found raycast.json"
+    const notebooks = readJsonSync(dataPath, "utf8") as Notebook[]
     return notebooks.sort((m, n) => (m.lastVisit < n.lastVisit ? 1 : -1))
   } catch (error) {
-    console.log("not found raycast.json")
+    console.log(error)
   }
 }
 
 export default function () {
-  const [state, setState] = useState<State>({
+  const [state, setState] = useState<SearchNotebookState>({
     notebooks: [],
     loading: true
   })
@@ -101,7 +101,7 @@ export default function () {
 
   useEffect(() => {
     setState({
-      notebooks: fetchData()!,
+      notebooks: fetchData(),
       loading: false
     })
   }, [])
@@ -202,7 +202,7 @@ const Actions: React.FC<{ notebook: Notebook }> = ({ notebook }) => {
     <ActionPanel title="Actions">
       <Action
         title="Open in MarginNote"
-        icon={Icon.AppWindow}
+        icon="marginnote.png"
         onAction={() => openNotebook(notebook.id)}
       />
       <Action.CopyToClipboard
@@ -214,8 +214,8 @@ const Actions: React.FC<{ notebook: Notebook }> = ({ notebook }) => {
         title="Copy Link（Markdown Style）"
         icon={Icon.Clipboard}
         shortcut={{
-          modifiers: ["cmd"],
-          key: "l"
+          modifiers: ["cmd", "shift"],
+          key: "enter"
         }}
         content={`[${notebook.title}](marginnote3app://notebook/${notebook.id})`}
       />
@@ -227,7 +227,7 @@ const NotFound = () => {
   const image = pathToFileURL(`${environment.assetsPath}/followme.gif`).href
   return (
     <Detail
-      markdown={`# ⚠️ Not found data source from MarginNote.\n ## Please install OhMyMN v4.1.0 and Follow the GIF \n > Unfortunately, OhMyMN currently only supports Chinese. English will be supported later. \n\n![](${image})`}
+      markdown={`# ⚠️ Not found data source from MarginNote.\n ## Please install MarginNote v3.7.19 and OhMyMN v4.1.0, and then follow the GIF \n > Unfortunately, OhMyMN only supports Chinese now. But English will be supported later. \n\n![](${image})`}
       actions={
         <ActionPanel title="Actions">
           <Action.OpenInBrowser
