@@ -83,7 +83,7 @@ export async function creatNote(note: NewNote, parentNoteid: string) {
   on createNote()
     tell application "MarginNote 3"
       set n to (fetch note "${parentNoteid}")
-      if n = missing value then
+      if n is not missing value then
         set nb to notebook of n
         set nbid to id of nb
         set nn to new note in notebook nbid
