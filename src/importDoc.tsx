@@ -8,7 +8,8 @@ import {
   confirmAlert,
   getPreferenceValues,
   showToast,
-  showHUD
+  showHUD,
+  Color
 } from "@raycast/api"
 import { homedir } from "os"
 import { useEffect, useState } from "react"
@@ -175,9 +176,12 @@ export default function () {
           return (
             <List.Item
               key={doc.index}
-              icon={
-                selectedList.includes(doc.index) ? Icon.Checkmark : Icon.Circle
-              }
+              icon={{
+                source: selectedList.includes(doc.index)
+                  ? Icon.Checkmark
+                  : Icon.Circle,
+                tintColor: Color.Blue
+              }}
               title={doc.name}
               accessoryTitle={accessoryTitle}
               keywords={accessoryTitle.split("/")}
