@@ -31,6 +31,7 @@ export interface Preferences {
   parentNote3: string
   parentNote4: string
   parentNote5: string
+  commonTags: string
 }
 
 export interface NewNote {

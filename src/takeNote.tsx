@@ -17,7 +17,7 @@ interface FormType {
   excerptText: string
   commentText: string
   customTags: string
-  selectTags: string[]
+  commonTags: string[]
   link: string
 }
 
@@ -46,6 +46,9 @@ const parentNotes = [
     id: string
   }[]
 )
+const commonTags = preferences.commonTags?.split(/[ #]+/).filter(k => k) ?? []
+
+const today = dateFormat(new Date(), "YYYYmmdd")
 
 export default function (props: { draftValues?: FormType }) {
   const { draftValues } = props
@@ -55,6 +58,7 @@ export default function (props: { draftValues?: FormType }) {
       setExcerptTextError(undefined)
     }
   }
+
   return (
     <Form
       enableDrafts
@@ -71,17 +75,22 @@ export default function (props: { draftValues?: FormType }) {
               onSubmit={async (v: FormType) => {
                 if (v.excerptText) {
                   dropExcerptError()
+                  const tags = [
+                    ...v.customTags.split(/[ #]+/),
+                    ...v.commonTags
+                  ].reduce((acc, k) => {
+                    if (k && !acc.includes(k)) {
+                      acc.push(k === "today" ? today : k)
+                    }
+                    return acc
+                  }, [] as string[])
+
                   await creatNote(
                     {
                       title: v.title,
                       excerptText: v.excerptText,
                       commentText: v.commentText,
-                      tags: unique([
-                        ...v.customTags
-                          .split(/\s+/)
-                          .map(k => (!k || k.startsWith("#") ? k : "#" + k)),
-                        ...v.selectTags.map(k => `#${k}`)
-                      ]).join(" "),
+                      tags: tags.map(k => "#" + k).join(" "),
                       link: v.link
                     },
                     k.id
@@ -132,15 +141,14 @@ export default function (props: { draftValues?: FormType }) {
         defaultValue={draftValues?.customTags}
       />
       <Form.TagPicker
-        id="selectTags"
-        title="Select Tags"
-        defaultValue={draftValues?.selectTags}
+        id="commonTags"
+        title="Common Tags"
+        defaultValue={draftValues?.commonTags}
       >
-        <Form.TagPicker.Item
-          value={dateFormat(new Date(), "YYYYmmdd")}
-          title={dateFormat(new Date(), "YYYYmmdd")}
-          icon="📅"
-        />
+        <Form.TagPicker.Item value="today" title={today} icon="📅" />
+        {commonTags.map(k => (
+          <Form.TagPicker.Item value={k} title={k} key={k} />
+        ))}
       </Form.TagPicker>
     </Form>
   )

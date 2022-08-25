@@ -155,6 +155,22 @@
           "type": "textfield",
           "required": false,
           "placeholder": ""
+        },
+        {
+          "name": "parentNote5",
+          "title": "Parent Note 5",
+          "description": "Exactly the same as above",
+          "type": "textfield",
+          "required": false,
+          "placeholder": ""
+        },
+        {
+          "name": "commonTags",
+          "title": "Common Tags",
+          "description": "Tags that you usually use",
+          "type": "textfield",
+          "required": false,
+          "placeholder": "Just like #tag1 #tag2 #tag3"
         }
       ]
     },
