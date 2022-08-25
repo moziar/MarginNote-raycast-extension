@@ -66,21 +66,6 @@ const [day, month, year] = [
   today.getFullYear()
 ]
 
-const notebookType: { key: NotebookFilter; title: string }[] = [
-  {
-    key: "all",
-    title: "All"
-  },
-  {
-    key: "mindmap",
-    title: "MindMap"
-  },
-  {
-    key: "flashcard",
-    title: "FlashCard"
-  }
-]
-
 function fetchData() {
   try {
     if (!existsSync(dataPath)) throw "not found raycast.json"
@@ -118,10 +103,12 @@ export default function () {
             setFileter(k as NotebookFilter)
           }}
         >
-          {notebookType.map(k => {
-            return (
-              <List.Dropdown.Item key={k.key} title={k.title} value={k.key} />
-            )
+          {[
+            ["all", "All"],
+            ["mindmap", "MindMap"],
+            ["flashcard", "FlashCard"]
+          ].map(k => {
+            return <List.Dropdown.Item key={k[0]} title={k[1]} value={k[0]} />
           })}
         </List.Dropdown>
       }

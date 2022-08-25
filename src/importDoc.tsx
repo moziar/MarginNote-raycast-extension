@@ -7,13 +7,14 @@ import {
   LocalStorage,
   confirmAlert,
   getPreferenceValues,
-  showToast
+  showToast,
+  showHUD
 } from "@raycast/api"
 import { homedir } from "os"
 import { useEffect, useState } from "react"
 import { runAppleScriptSync } from "run-applescript"
 import fg, { Entry } from "fast-glob"
-import { Doc, Preferences, SearchDocState } from "./typings"
+import { Doc, DocmentFilter, Preferences, SearchDocState } from "./typings"
 import { copyFile, existsSync, PathLike, statSync } from "fs-extra"
 import { isRunning, openMN, restartMN } from "./utils/applescript"
 
@@ -38,7 +39,9 @@ async function fetchData(): Promise<Doc[]> {
       suppressErrors: true,
       objectMode: true
     })
-  ).sort((a, b) => (a.path < b.path ? -1 : 1))
+  )
+    .sort((a, b) => (a.path < b.path ? -1 : 1))
+    .map((k, index) => ({ ...k, index }))
 }
 
 function getAllFolder(): Entry[] {
@@ -96,14 +99,8 @@ async function updateData() {
     ) {
       restartMN()
     }
-  } else if (
-    await confirmAlert({
-      title: "Imported successfully",
-      message: "Whether to open MarginNote now ?",
-      icon: "marginnote.png"
-    })
-  ) {
-    openMN()
+  } else {
+    showHUD("Imported successfully")
   }
 }
 
@@ -114,9 +111,9 @@ export default function () {
   })
 
   const [selectedList, setSelectedList] = useState<number[]>([])
+  const [filter, setFileter] = useState<DocmentFilter>("all")
   const folders = getAllFolder()
 
-  console.log(preferences)
   async function checkCache() {
     const cache = (await LocalStorage.getItem("marginnote-docs")) as string
     let docs: Doc[]
@@ -146,136 +143,162 @@ export default function () {
     <List
       isLoading={state.loading}
       searchBarPlaceholder="Find and Choose Document to Import"
+      searchBarAccessory={
+        <List.Dropdown
+          tooltip="Filter"
+          onChange={k => {
+            setFileter(k as DocmentFilter)
+          }}
+        >
+          {[
+            ["All", "all"],
+            ["Selected", "selected"],
+            ["Not Selected", "unselected"]
+          ].map(k => {
+            return <List.Dropdown.Item key={k[1]} title={k[0]} value={k[1]} />
+          })}
+        </List.Dropdown>
+      }
     >
-      {state.docs.map((doc, index) => {
-        const accessoryTitle = doc.path
-          .replace(home, "~")
-          .replace("/" + doc.name, "")
-        return (
-          <List.Item
-            key={index}
-            icon={selectedList.includes(index) ? Icon.Checkmark : Icon.Circle}
-            title={doc.name}
-            accessoryTitle={accessoryTitle}
-            keywords={accessoryTitle.split("/")}
-            actions={
-              <ActionPanel title="Actions">
-                <Action
-                  title="Toggle the Selection"
-                  icon={Icon.CheckCircle}
-                  onAction={() => {
-                    if (selectedList.includes(index))
-                      setSelectedList([
-                        ...selectedList.filter(m => m !== index)
-                      ])
-                    else setSelectedList([...selectedList, index])
-                    runAppleScriptSync(`
+      {state.docs
+        .filter(k =>
+          filter === "all"
+            ? true
+            : filter === "selected"
+            ? selectedList.includes(k.index)
+            : !selectedList.includes(k.index)
+        )
+        .map(doc => {
+          const accessoryTitle = doc.path
+            .replace(home, "~")
+            .replace("/" + doc.name, "")
+          return (
+            <List.Item
+              key={doc.index}
+              icon={
+                selectedList.includes(doc.index) ? Icon.Checkmark : Icon.Circle
+              }
+              title={doc.name}
+              accessoryTitle={accessoryTitle}
+              keywords={accessoryTitle.split("/")}
+              actions={
+                <ActionPanel title="Actions">
+                  <Action
+                    title="Toggle the Selection"
+                    icon={Icon.CheckCircle}
+                    onAction={() => {
+                      if (selectedList.includes(doc.index))
+                        setSelectedList([
+                          ...selectedList.filter(m => m !== doc.index)
+                        ])
+                      else setSelectedList([...selectedList, doc.index])
+                      runAppleScriptSync(`
                       tell application "System Events"
                         tell process "Raycast"
                           key code 125
                         end tell
                       end tell
                     `)
-                  }}
-                />
-                <ActionPanel.Section title="Support Muilt File">
-                  <ActionPanel.Submenu
-                    title="Import to MarginNote"
-                    shortcut={{ modifiers: ["cmd"], key: "enter" }}
-                    icon="marginnote.png"
-                  >
-                    {[{ name: "🏠 Home", path: docPath }, ...folders].map(
-                      (folder, q) => (
-                        <Action
-                          title={folder.name}
-                          key={q}
-                          onAction={async () => {
-                            copyToMN(
-                              selectedList.length
-                                ? selectedList.map(k => state.docs[k])
-                                : doc
-                            )
-                            setSelectedList([])
-                            updateData()
-                          }}
-                        ></Action>
-                      )
-                    )}
-                  </ActionPanel.Submenu>
-
-                  <ActionPanel.Submenu
-                    title="Move to MarginNote"
-                    icon="marginnote.png"
-                    shortcut={{ modifiers: ["cmd", "shift"], key: "enter" }}
-                  >
-                    {[{ name: "🏠 Home", path: docPath }, ...folders].map(
-                      (folder, q) => (
-                        <Action
-                          title={folder.name}
-                          key={q}
-                          onAction={async () => {
-                            copyToMN(
-                              selectedList.length
-                                ? selectedList.map(k => state.docs[k])
-                                : doc
-                            )
-                            setSelectedList([])
-                            moveToTrash(
-                              selectedList.length
-                                ? selectedList.map(k => state.docs[k].path)
-                                : doc.path
-                            )
-                            const docs = state.docs.filter((k, i) =>
-                              selectedList.length
-                                ? !selectedList.includes(i)
-                                : i !== index
-                            )
-                            setState({
-                              ...state,
-                              docs
-                            })
-                            LocalStorage.setItem(
-                              "marginnote-docs",
-                              JSON.stringify(docs)
-                            )
-                            updateData()
-                          }}
-                        ></Action>
-                      )
-                    )}
-                  </ActionPanel.Submenu>
-                  <Action.Trash
-                    paths={
-                      selectedList.length
-                        ? selectedList.map(k => state.docs[k].path)
-                        : doc.path
-                    }
-                    shortcut={{ modifiers: ["cmd", "shift"], key: "x" }}
-                    onTrash={() => {
-                      setSelectedList([])
-                      const docs = state.docs.filter((k, i) =>
-                        selectedList.length
-                          ? !selectedList.includes(i)
-                          : i !== index
-                      )
-                      setState({
-                        ...state,
-                        docs
-                      })
-                      LocalStorage.setItem(
-                        "marginnote-docs",
-                        JSON.stringify(docs)
-                      )
                     }}
                   />
-                </ActionPanel.Section>
+                  <ActionPanel.Section title="Support Muilt File">
+                    <ActionPanel.Submenu
+                      title="Import to MarginNote"
+                      shortcut={{ modifiers: ["cmd"], key: "enter" }}
+                      icon="marginnote.png"
+                    >
+                      {[{ name: "🏠 Home", path: docPath }, ...folders].map(
+                        (folder, q) => (
+                          <Action
+                            title={folder.name}
+                            key={q}
+                            onAction={async () => {
+                              copyToMN(
+                                selectedList.length
+                                  ? selectedList.map(k => state.docs[k])
+                                  : doc
+                              )
+                              setSelectedList([])
+                              updateData()
+                            }}
+                          ></Action>
+                        )
+                      )}
+                    </ActionPanel.Submenu>
 
-                <SingleFileAction Document={doc} />
-              </ActionPanel>
-            }
-          />
-        )
-      })}
+                    <ActionPanel.Submenu
+                      title="Move to MarginNote"
+                      icon="marginnote.png"
+                      shortcut={{ modifiers: ["cmd", "shift"], key: "enter" }}
+                    >
+                      {[{ name: "🏠 Home", path: docPath }, ...folders].map(
+                        (folder, q) => (
+                          <Action
+                            title={folder.name}
+                            key={q}
+                            onAction={async () => {
+                              copyToMN(
+                                selectedList.length
+                                  ? selectedList.map(k => state.docs[k])
+                                  : doc
+                              )
+                              setSelectedList([])
+                              moveToTrash(
+                                selectedList.length
+                                  ? selectedList.map(k => state.docs[k].path)
+                                  : doc.path
+                              )
+                              const docs = state.docs.filter((k, i) =>
+                                selectedList.length
+                                  ? !selectedList.includes(i)
+                                  : i !== doc.index
+                              )
+                              setState({
+                                ...state,
+                                docs
+                              })
+                              LocalStorage.setItem(
+                                "marginnote-docs",
+                                JSON.stringify(docs)
+                              )
+                              updateData()
+                            }}
+                          ></Action>
+                        )
+                      )}
+                    </ActionPanel.Submenu>
+                    <Action.Trash
+                      paths={
+                        selectedList.length
+                          ? selectedList.map(k => state.docs[k].path)
+                          : doc.path
+                      }
+                      shortcut={{ modifiers: ["cmd", "shift"], key: "x" }}
+                      onTrash={() => {
+                        setSelectedList([])
+                        const docs = state.docs.filter((k, i) =>
+                          selectedList.length
+                            ? !selectedList.includes(i)
+                            : i !== doc.index
+                        )
+                        setState({
+                          ...state,
+                          docs
+                        })
+                        LocalStorage.setItem(
+                          "marginnote-docs",
+                          JSON.stringify(docs)
+                        )
+                      }}
+                    />
+                  </ActionPanel.Section>
+
+                  <SingleFileAction Document={doc} />
+                </ActionPanel>
+              }
+            />
+          )
+        })}
     </List>
   )
 }

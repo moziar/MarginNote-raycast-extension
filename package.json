@@ -1,7 +1,7 @@
 {
   "name": "marinnote",
   "title": "MarginNote",
-  "description": "Search notebook within the MarginNote",
+  "description": "Enhanced MarginNote",
   "icon": "marginnote.png",
   "author": "MarginNote",
   "contributors": [
@@ -106,6 +106,55 @@
           "type": "textfield",
           "required": false,
           "placeholder": "**/*.app/**/*"
+        }
+      ]
+    },
+    {
+      "name": "takeNote",
+      "title": "Take Note",
+      "subtitle": "MarginNote",
+      "description": "Take note quickly. The note will be created as a child of the parent note that you set.",
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "parentNote1",
+          "title": "Parent Note 1",
+          "description": "Just note url",
+          "type": "textfield",
+          "required": true,
+          "placeholder": "marginnote3app://note/5842ED6F-EBAA-42B2-A929-AE5B1E599291"
+        },
+        {
+          "name": "parentNote2",
+          "title": "Parent Note 2",
+          "description": "You can also set the note alias",
+          "type": "textfield",
+          "required": false,
+          "placeholder": "alias=marginnote3app://note/5842ED6F-EBAA-42B2-A929-AE5B1E599291"
+        },
+        {
+          "name": "parentNote3",
+          "title": "Parent Note 3",
+          "description": "Exactly the same as above",
+          "type": "textfield",
+          "required": false,
+          "placeholder": ""
+        },
+        {
+          "name": "parentNote4",
+          "title": "Parent Note 4",
+          "description": "Exactly the same as above",
+          "type": "textfield",
+          "required": false,
+          "placeholder": ""
+        },
+        {
+          "name": "parentNote5",
+          "title": "Parent Note 5",
+          "description": "Exactly the same as above",
+          "type": "textfield",
+          "required": false,
+          "placeholder": ""
         }
       ]
     },

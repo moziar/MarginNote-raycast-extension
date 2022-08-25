@@ -69,7 +69,6 @@ export default function (props: { draftValues?: FormType }) {
                 key: `${index + 1}` as Keyboard.KeyEquivalent
               }}
               onSubmit={async (v: FormType) => {
-                console.log(v)
                 if (v.excerptText) {
                   dropExcerptError()
                   await creatNote(
