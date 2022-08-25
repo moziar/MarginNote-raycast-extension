@@ -1,6 +1,7 @@
 import { getPreferenceValues } from "@raycast/api"
 import { runAppleScript } from "run-applescript"
-import { Preferences } from "../typings"
+import { escapeDoubleQuote } from "."
+import { NewNote, Preferences } from "../typings"
 
 export async function isRunning(appName: string) {
   try {
@@ -74,4 +75,32 @@ export async function openMN() {
     end if
     `
   await runAppleScript(script)
+}
+
+export async function creatNote(note: NewNote, parentNoteid: string) {
+  const { title, excerptText, commentText, tags, link } = note
+  runAppleScript(`
+  on createNote()
+    tell application "MarginNote 3"
+      set n to (fetch note "${parentNoteid}")
+      if n = missing value then
+        set nb to notebook of n
+        set nbid to id of nb
+        set nn to new note in notebook nbid
+        add child notes {nn} target note n
+        set title of nn to "${escapeDoubleQuote(title)}"
+        set excerpt text of nn to "${escapeDoubleQuote(excerptText)}"
+        if "${commentText}" is not "" then
+          append text comment "${escapeDoubleQuote(commentText)}" target note nn
+        end if
+        if "${link}" is not "" then
+          append text comment "${escapeDoubleQuote(link)}" target note nn
+        end if
+        if "${tags}" is not "" then
+          append text comment "${escapeDoubleQuote(tags)}" target note nn
+        end if
+      end if
+    end tell
+  end createNote
+  createNote()`)
 }

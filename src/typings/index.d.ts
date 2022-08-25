@@ -7,13 +7,14 @@ export interface Notebook {
 }
 
 export type NotebookFilter = "all" | "mindmap" | "flashcard"
+export type DocmentFilter = "all" | "selected" | "unselected"
 export interface SearchNotebookState {
   notebooks: Notebook[] | undefined
   loading: boolean
   error?: Error
 }
 
-export type Doc = Entry
+export type Doc = Entry & { index: number }
 export interface SearchDocState {
   docs: Doc[]
   loading: boolean
@@ -25,4 +26,17 @@ export interface Preferences {
   waitingTime: "2" | "3" | "4" | "5" | "6"
   folderDepth: "2" | "3" | "4" | "5" | "6"
   ignorePattern: string
+  parentNote1: string
+  parentNote2: string
+  parentNote3: string
+  parentNote4: string
+  parentNote5: string
+}
+
+export interface NewNote {
+  title: string
+  excerptText: string
+  commentText: string
+  tags: string
+  link: string
 }
