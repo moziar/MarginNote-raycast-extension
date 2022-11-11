@@ -4,60 +4,15 @@ import {
   closeMainWindow,
   Icon,
   Action,
-  Detail,
-  environment
+  Detail
 } from "@raycast/api"
 import { existsSync, readJsonSync } from "fs-extra"
 import { homedir } from "os"
 import React, { useEffect, useState } from "react"
-import { runAppleScript } from "run-applescript"
-import { pathToFileURL } from "url"
 import { Notebook, NotebookFilter, SearchNotebookState } from "./typings"
+import { openNotebook } from "./utils"
 
-const dataPath = `${homedir()}/Library/Containers/QReader.MarginStudyMac/Data/Library/MarginNote Extensions/marginnote.extension.ohmymn/raycast.json`
-async function openNotebook(id: string) {
-  await closeMainWindow()
-  const script = `
-    on openNotebook()
-      open location "marginnote3app://notebook/${id}"
-    end openNotebook
-
-    on openMN()
-      tell application "MarginNote 3" to activate
-      delay 3
-      tell application "System Events"
-        tell process "MarginNote 3"
-          key code 36
-        end tell
-      end tell
-      delay 0.5
-      openNotebook()
-    end openMN
-
-    on isRunning(appName)
-      tell application "System Events"
-        return (name of processes contains appName)
-      end tell
-    end isRunning
-
-    on isActive(appName)
-      tell application "System Events"
-        return (name of first process whose frontmost is true) contains appName
-      end tell
-    end isActive
-
-
-    if isRunning("MarginNote 3") and not isActive("MarginNote 3") then
-    	tell application "MarginNote 3" to activate
-      openNotebook()
-    else if isRunning("MarginNote 3") then
-      openNotebook()
-    else
-      openMN()
-    end if
-    `
-  runAppleScript(script)
-}
+const dataPath = `${homedir()}/Library/Containers/QReader.MarginStudyMac/Data/Library/MarginNote Extensions/marginnote.extension.raycastenhance/notebooks.json`
 
 const today = new Date()
 const [day, month, year] = [
@@ -68,9 +23,9 @@ const [day, month, year] = [
 
 function fetchData() {
   try {
-    if (!existsSync(dataPath)) throw "not found raycast.json"
+    if (!existsSync(dataPath)) throw "not found notebooks.json"
     const notebooks = readJsonSync(dataPath, "utf8") as Notebook[]
-    return notebooks.sort((m, n) => (m.lastVisit < n.lastVisit ? 1 : -1))
+    return notebooks.sort((m, n) => n.lastVisit - m.lastVisit)
   } catch (error) {
     console.log(error)
   }
@@ -89,6 +44,12 @@ export default function () {
       notebooks: fetchData(),
       loading: false
     })
+    setTimeout(() => {
+      setState({
+        notebooks: fetchData(),
+        loading: false
+      })
+    }, 1000)
   }, [])
 
   return state.notebooks ? (
@@ -116,10 +77,12 @@ export default function () {
       {state.notebooks
         .reduce(
           (acc, cur) => {
-            const [y, m, d] = cur.lastVisit
-              .match(/(\d+)\-(\d+)\-(\d+) /)!
-              .slice(1, 4)
-              .map(k => Number(k))
+            const date = new Date(cur.lastVisit)
+            const [d, m, y] = [
+              today.getDate(),
+              today.getMonth() + 1,
+              today.getFullYear()
+            ]
             if (y === year && m === month && d === day) {
               acc[0].push(cur)
             } else if (y === year && m === month && d === day - 1) {
@@ -190,7 +153,10 @@ const Actions: React.FC<{ notebook: Notebook }> = ({ notebook }) => {
       <Action
         title="Open in MarginNote"
         icon="marginnote.png"
-        onAction={() => openNotebook(notebook.id)}
+        onAction={async () => {
+          await closeMainWindow()
+          await openNotebook(notebook.id)
+        }}
       />
       <Action.CopyToClipboard
         title="Copy Link"
@@ -211,16 +177,15 @@ const Actions: React.FC<{ notebook: Notebook }> = ({ notebook }) => {
 }
 
 const NotFound = () => {
-  const image = pathToFileURL(`${environment.assetsPath}/followme.gif`).href
   return (
     <Detail
-      markdown={`# ⚠️ Not found data source from MarginNote.\n ## Please install MarginNote v3.7.19 and OhMyMN v4.1.0, and then follow the GIF \n > Unfortunately, OhMyMN only supports Chinese now. But English will be supported later. \n\n![](${image})`}
+      markdown={`# ⚠️ Not found data source from MarginNote\n ## Please install MarginNote v3.7.21 or lastest and "Raycast Enhance" addon.`}
       actions={
         <ActionPanel title="Actions">
           <Action.OpenInBrowser
-            title="Download OhMyMN"
+            title="Download Raycast Enhance"
             icon={Icon.AppWindow}
-            url="https://bbs.marginnote.cn/t/topic/20501"
+            url="https://github.com/marginnoteapp/raycast-enhance/releases/"
           />
         </ActionPanel>
       }

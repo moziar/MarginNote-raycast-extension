@@ -2,7 +2,7 @@ import { Entry } from "fast-glob"
 export interface Notebook {
   id: string
   title: string
-  lastVisit: string
+  lastVisit: number
   type: 1 | 2
 }
 
@@ -32,6 +32,7 @@ export interface Preferences {
   parentNote4: string
   parentNote5: string
   commonTags: string
+  showConfetti: boolean
 }
 
 export interface NewNote {
@@ -40,4 +41,5 @@ export interface NewNote {
   commentText: string
   tags: string
   link: string
+  color: string
 }

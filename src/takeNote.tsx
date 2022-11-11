@@ -2,15 +2,22 @@ import {
   Action,
   ActionPanel,
   closeMainWindow,
+  Color,
   Form,
   getPreferenceValues,
+  Icon,
   Keyboard,
+  LocalStorage,
+  open,
   popToRoot,
-  showHUD
+  showHUD,
+  showToast,
+  Toast
 } from "@raycast/api"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { runAppleScript } from "run-applescript"
 import { Preferences } from "./typings"
-import { creatNote, dateFormat, unique } from "./utils"
+import { creatNote, dateFormat, getSelectedTextLink, unique } from "./utils"
 
 interface FormType {
   title: string
@@ -19,6 +26,12 @@ interface FormType {
   customTags: string
   commonTags: string[]
   link: string
+  color: string
+}
+
+interface ParentNote {
+  id: string
+  title: string
 }
 
 const preferences = getPreferenceValues<Preferences>()
@@ -28,117 +41,193 @@ const parentNotes = [
   preferences.parentNote3,
   preferences.parentNote4,
   preferences.parentNote5
-].reduce(
-  (acc, k, i) => {
-    if (!k) return acc
-    k = k.trim()
-    const title = k.match(/^(.+)=marginnote/)
-    const id = k.match(/note\/(.+)$/)
-    if (!id) return acc
-    acc.push({
-      title: "Creat to " + (title ? title[1] : "Parent Note " + (i + 1)),
-      id: id[1]
-    })
-    return acc
-  },
-  [] as {
-    title: string
-    id: string
-  }[]
-)
+].reduce((acc, k, i) => {
+  if (!k) return acc
+  k = k.trim()
+  const title = k.match(/^(.+)=marginnote/)
+  const id = k.match(/note\/(.+)$/)
+  if (!id) return acc
+  acc.push({
+    title: "Creat to " + (title ? title[1] : "Parent Note " + (i + 1)),
+    id: id[1]
+  })
+  return acc
+}, [] as ParentNote[])
 const commonTags = preferences.commonTags?.split(/[ #]+/).filter(k => k) ?? []
+const colors = [
+  ["Light Yellow", "#E9E38C"],
+  ["Light Green", "#AEE39D"],
+  ["Light Blue", "#9DBCD1"],
+  ["light Red", "#E9979D"],
+  ["Yellow", "#E9E406"],
+  ["Green", "#03E406"],
+  ["Blue", "#01AAD2"],
+  ["Red", "#E90204"],
+  ["Orange", "#E87305"],
+  ["Dark Green", "#007335"],
+  ["Dark Blue", "#013895"],
+  ["Dark Red", "#BD1911"],
+  ["White", "#E9E4D2"],
+  ["Light Grey", "#C6C3B4"],
+  ["Dark Grey", "#A4A295"],
+  ["Purple", "#B28DB9"]
+]
 
 const today = dateFormat(new Date(), "YYYYmmdd")
 
 export default function (props: { draftValues?: FormType }) {
   const { draftValues } = props
-  const [excerptTextError, setExcerptTextError] = useState<string | undefined>()
-  function dropExcerptError() {
-    if (excerptTextError && excerptTextError.length > 0) {
-      setExcerptTextError(undefined)
+  const [textEmptyError, setTextEmptyError] = useState<string | undefined>()
+  const [excerptText, setExcerptText] = useState(draftValues?.excerptText ?? "")
+  const [comment, setComment] = useState(draftValues?.commentText ?? "")
+  const [link, setLink] = useState(draftValues?.link ?? "")
+  const [lastColorIndex, setLastColorIndex] = useState<number>(12)
+
+  async function fetchLastColor() {
+    const color = await LocalStorage.getItem("lastColor")
+    if (color !== undefined) {
+      setLastColorIndex(Number(color))
     }
   }
+  function dropTextEmptyError() {
+    if (textEmptyError) {
+      setTextEmptyError(undefined)
+    }
+  }
+  async function fetchExcerptLink() {
+    const ret = await getSelectedTextLink()
+    if (!excerptText) setExcerptText(ret.text)
+    if (!link) setLink(ret.link)
+  }
+  async function submit(form: FormType, node: ParentNote) {
+    if (form.excerptText || form.commentText) {
+      dropTextEmptyError()
+      const tags = [
+        ...form.commonTags,
+        ...form.customTags.split(/[ #]+/)
+      ].reduce((acc, k) => {
+        if (k && !acc.includes(k)) {
+          acc.push(k === "today" ? today : k)
+        }
+        return acc
+      }, [] as string[])
+      const color = form.color === "last" ? String(lastColorIndex) : form.color
+      LocalStorage.setItem("lastColor", color)
+      const id = await creatNote(
+        {
+          title: form.title,
+          excerptText: form.excerptText,
+          commentText: form.commentText,
+          tags: unique(tags)
+            .map(k => "#" + k)
+            .join(" "),
+          link: form.link,
+          color
+        },
+        node.id
+      )
+      preferences.showConfetti && open("raycast://confetti")
+      showHUD("Creat Note Successfully")
+      popToRoot()
+      closeMainWindow()
+      return id
+    } else {
+      setTextEmptyError("One of the fields should't be empty!")
+    }
+  }
+
+  useEffect(() => {
+    dropTextEmptyError()
+  }, [comment, excerptText])
+
+  useEffect(() => {
+    fetchExcerptLink()
+    fetchLastColor()
+  }, [])
 
   return (
     <Form
       enableDrafts
       actions={
         <ActionPanel>
-          {parentNotes.map((k, index) => (
-            <Action.SubmitForm
-              title={k.title}
-              key={index}
-              shortcut={{
-                modifiers: ["cmd"],
-                key: `${index + 1}` as Keyboard.KeyEquivalent
-              }}
-              onSubmit={async (v: FormType) => {
-                if (v.excerptText) {
-                  dropExcerptError()
-                  const tags = [
-                    ...v.customTags.split(/[ #]+/),
-                    ...v.commonTags
-                  ].reduce((acc, k) => {
-                    if (k && !acc.includes(k)) {
-                      acc.push(k === "today" ? today : k)
-                    }
-                    return acc
-                  }, [] as string[])
-
-                  await creatNote(
-                    {
-                      title: v.title,
-                      excerptText: v.excerptText,
-                      commentText: v.commentText,
-                      tags: tags.map(k => "#" + k).join(" "),
-                      link: v.link
-                    },
-                    k.id
-                  )
-                  showHUD("Note-taking success")
-                  popToRoot()
-                  closeMainWindow()
-                } else {
-                  setExcerptTextError("The field should't be empty!")
-                }
-              }}
-            />
-          ))}
+          {parentNotes
+            .map((k, index) => [
+              <Action.SubmitForm
+                title={k.title}
+                key={index * 2}
+                shortcut={{
+                  modifiers: ["cmd"],
+                  key: `${index + 1}` as Keyboard.KeyEquivalent
+                }}
+                onSubmit={(v: FormType) => {
+                  submit(v, k)
+                }}
+              />,
+              <Action.SubmitForm
+                title={k.title + " and Open"}
+                key={index * 2 + 1}
+                shortcut={{
+                  modifiers: ["cmd", "shift"],
+                  key: `${index + 1}` as Keyboard.KeyEquivalent
+                }}
+                onSubmit={async (v: FormType) => {
+                  const toast = await showToast({
+                    style: Toast.Style.Animated,
+                    title: "Creating Note and Open..."
+                  })
+                  try {
+                    const id = await submit(v, k)
+                    if (id)
+                      await runAppleScript(
+                        `
+                      tell application "MarginNote 3" to activate
+                      open location "marginnote3app://note/${id}"`
+                      )
+                    toast.style = Toast.Style.Success
+                    toast.title = "Creat Note Successfully"
+                  } catch (err: any) {
+                    toast.style = Toast.Style.Failure
+                    toast.title = "Failed to Create Note"
+                    toast.message = err.message
+                  }
+                }}
+              />
+            ])
+            .flat()}
         </ActionPanel>
       }
     >
       <Form.TextField
         id="title"
-        placeholder={`Use ; to add multiple titles`}
+        placeholder={`Use ";" to add multiple titles`}
         title="Title"
         defaultValue={draftValues?.title}
       />
       <Form.TextArea
         id="excerptText"
         title="Excerpt Text"
-        autoFocus={true}
         placeholder="Some text you want to excerpt"
-        error={excerptTextError}
-        onChange={dropExcerptError}
-        defaultValue={draftValues?.excerptText}
+        error={excerptText ? undefined : textEmptyError}
+        onChange={text => {
+          setExcerptText(text)
+        }}
+        value={excerptText}
       />
       <Form.TextArea
         id="commentText"
         title="Comment Text"
+        autoFocus={true}
+        onChange={text => {
+          setComment(text)
+        }}
+        error={comment ? undefined : textEmptyError}
         placeholder="Some text about your feelings or thoughts"
-        defaultValue={draftValues?.commentText}
       />
       <Form.TextField
         id="link"
-        placeholder={"Link or another comment"}
-        title="Link"
-        defaultValue={draftValues?.link}
-      />
-      <Form.TextField
-        id="customTags"
-        title="Custom Tags"
-        placeholder="Just like #tag1 #tag2"
-        defaultValue={draftValues?.customTags}
+        title="Excerpt Link"
+        value={link}
+        onChange={setLink}
       />
       <Form.TagPicker
         id="commonTags"
@@ -150,6 +239,32 @@ export default function (props: { draftValues?: FormType }) {
           <Form.TagPicker.Item value={k} title={k} key={k} />
         ))}
       </Form.TagPicker>
+      <Form.TextField
+        id="customTags"
+        title="Custom Tags"
+        placeholder="Just like #tag1 #tag2"
+        defaultValue={draftValues?.customTags}
+      />
+      <Form.Dropdown id="color" title="Color" defaultValue={draftValues?.color}>
+        <Form.Dropdown.Item
+          value="last"
+          title="Last Color Used"
+          icon={{
+            source: Icon.CircleFilled,
+            tintColor: colors[lastColorIndex][1]
+          }}
+        />
+        <Form.Dropdown.Section>
+          {colors.map((color, i) => (
+            <Form.Dropdown.Item
+              key={i}
+              value={String(i)}
+              title={color[0]}
+              icon={{ source: Icon.CircleFilled, tintColor: color[1] }}
+            />
+          ))}
+        </Form.Dropdown.Section>
+      </Form.Dropdown>
     </Form>
   )
 }
