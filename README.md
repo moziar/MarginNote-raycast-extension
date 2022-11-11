@@ -8,6 +8,7 @@ There are options to help you automatically skip alerts for unsigned mnaddon whe
 2. Waiting Time: Wait for MarginNote to start.
 ### Search Notebook
 > **Note**
+>
 > Please install MarginNote v3.7.21 or lastest and [Raycast Enhance](https://github.com/marginnoteapp/raycast-enhance/releases) addon.
 
 Search notebook by name and Open directly. Support mindmap noteboook and flashcard notebook.
