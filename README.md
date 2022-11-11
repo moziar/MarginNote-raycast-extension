@@ -20,6 +20,7 @@ Usually to be used to excerpt some text from other apps and take note in MarginN
 - Excerpt browser url automatically, support `Safari`, `Arc`, `Chrome`, `Edge`.
 
 **settings**
+- Show confetti when creating note successfully to celebrate.
 - You can set 5 parents note url, and the new note will be created as a child note. Alias can be set by `alias=url`
 - You can set common tags as many as you want.
 ### Restart MarginNote
