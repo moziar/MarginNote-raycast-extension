@@ -14,7 +14,7 @@ import React, { useEffect, useState } from "react"
 import type { Notebook, NotebookFilter, SearchNotebookState } from "./typings"
 import { isMarginNoteInstalled, openNotebook } from "./utils"
 
-const dataPath = `${homedir()}/Library/Containers/QReader.MarginStudyMac/Data/Library/MarginNote Extensions/marginnote.extension.raycastenhance/notebooks.json`
+const dataPath = `${homedir()}/Library/Containers/QReader.MarginStudy.easy/Data/Library/MarginNote Extensions/marginnote.extension.raycastenhance/notebooks.json`
 
 const today = new Date()
 const [day, month, year] = [
@@ -34,7 +34,7 @@ export default function () {
   async function fetchData() {
     try {
       if (!(await isMarginNoteInstalled())) {
-        showToast(Toast.Style.Failure, "Error", "MarginNote 3 is not installed")
+        showToast(Toast.Style.Failure, "Error", "MarginNote 4 is not installed")
         setState({
           notebooks: undefined,
           loading: false
@@ -43,7 +43,7 @@ export default function () {
         showToast(
           Toast.Style.Failure,
           "No Data Source",
-          'Please install "Raycast Enhance" and latest MarginNote 3 (^3.7.21). Click to download "Raycast Enhance".               '
+          'Please install "Raycast Enhance" and latest MarginNote 4. Click to download "Raycast Enhance".               '
         )
         setState({
           notebooks: undefined,
@@ -178,7 +178,7 @@ const Actions: React.FC<{ notebook: Notebook }> = ({ notebook }) => {
       <Action.CopyToClipboard
         title="Copy Link"
         icon={Icon.Clipboard}
-        content={`marginnote3app://notebook/${notebook.id}`}
+        content={`marginnote4app://notebook/${notebook.id}`}
       />
       <Action.CopyToClipboard
         title="Copy Link（Markdown Style）"
@@ -187,7 +187,7 @@ const Actions: React.FC<{ notebook: Notebook }> = ({ notebook }) => {
           modifiers: ["cmd", "shift"],
           key: "enter"
         }}
-        content={`[${notebook.title}](marginnote3app://notebook/${notebook.id})`}
+        content={`[${notebook.title}](marginnote4app://notebook/${notebook.id})`}
       />
     </ActionPanel>
   )

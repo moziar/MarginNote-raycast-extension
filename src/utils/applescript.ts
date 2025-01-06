@@ -7,11 +7,11 @@ export async function openNotebook(id: string) {
   const { skipAlert, waitingTime } = getPreferenceValues<Preferences>()
   const script = `
     on openMN()
-      tell application "MarginNote 3" to activate
+      tell application "MarginNote 4" to activate
       if ${skipAlert} then
         delay ${waitingTime}
         tell application "System Events"
-          tell process "MarginNote 3"
+          tell process "MarginNote 4"
             key code 36
           end tell
         end tell
@@ -19,7 +19,7 @@ export async function openNotebook(id: string) {
     end openMN
 
     on openNotebook()
-      open location "marginnote3app://notebook/${id}"
+      open location "marginnote4app://notebook/${id}"
     end openNotebook
 
     on isRunning(appName)
@@ -34,10 +34,10 @@ export async function openNotebook(id: string) {
       end tell
     end isActive
 
-    if isRunning("MarginNote 3") and not isActive("MarginNote 3") then
-    	tell application "MarginNote 3" to activate
+    if isRunning("MarginNote 4") and not isActive("MarginNote 4") then
+    	tell application "MarginNote 4" to activate
       openNotebook()
-    else if isRunning("MarginNote 3") then
+    else if isRunning("MarginNote 4") then
       openNotebook()
     else
       openMN()
@@ -52,11 +52,11 @@ export async function restartMN() {
   const { skipAlert, waitingTime } = getPreferenceValues<Preferences>()
   const script = `
     on openMN()
-      tell application "MarginNote 3" to activate
+      tell application "MarginNote 4" to activate
       if ${skipAlert} then
         delay ${waitingTime}
         tell application "System Events"
-          tell process "MarginNote 3"
+          tell process "MarginNote 4"
             key code 36
           end tell
         end tell
@@ -75,13 +75,13 @@ export async function restartMN() {
       end tell
     end isActive
 
-    if isRunning("MarginNote 3") then
-      tell application "MarginNote 3" to activate
-      repeat until isActive("MarginNote 3")
+    if isRunning("MarginNote 4") then
+      tell application "MarginNote 4" to activate
+      repeat until isActive("MarginNote 4")
         delay 0.1
       end repeat
-      tell application "MarginNote 3" to quit
-      repeat while isRunning("MarginNote 3")
+      tell application "MarginNote 4" to quit
+      repeat while isRunning("MarginNote 4")
         delay 0.1
       end repeat
       openMN()
@@ -107,11 +107,11 @@ export async function creatNote(
     const { skipAlert, waitingTime } = getPreferenceValues<Preferences>()
     const script = `
     on openMN()
-      tell application "MarginNote 3" to activate
+      tell application "MarginNote 4" to activate
       if ${skipAlert} then
         delay ${waitingTime}
         tell application "System Events"
-          tell process "MarginNote 3"
+          tell process "MarginNote 4"
             key code 36
           end tell
         end tell
@@ -120,8 +120,8 @@ export async function creatNote(
 
     on openNote(nt, nb)
       if nt is not "" then
-        open location "marginnote3app://notebook/" & nb
-        open location "marginnote3app://note/" & nt
+        open location "marginnote4app://notebook/" & nb
+        open location "marginnote4app://note/" & nt
         ""
       else
         "error"
@@ -141,7 +141,7 @@ export async function creatNote(
     end isActive
 
     on creat()
-      tell application "MarginNote 3"
+      tell application "MarginNote 4"
         set n to (fetch note "${parentNoteid}")
         if n is not missing value then
           set nb to notebook of n
@@ -171,11 +171,11 @@ export async function creatNote(
       end tell
     end creat
 
-    if isRunning("MarginNote 3") and not isActive("MarginNote 3") then
-      tell application "MarginNote 3" to activate
+    if isRunning("MarginNote 4") and not isActive("MarginNote 4") then
+      tell application "MarginNote 4" to activate
       set info to creat()
       openNote(noteid of info, notebookid of info)
-    else if isRunning("MarginNote 3") then
+    else if isRunning("MarginNote 4") then
       set info to creat()
       openNote(noteid of info, notebookid of info)
     else
@@ -189,11 +189,11 @@ export async function creatNote(
     const { skipAlert, waitingTime } = getPreferenceValues<Preferences>()
     const script = `
     on openMN()
-      tell application "MarginNote 3" to activate
+      tell application "MarginNote 4" to activate
       if ${skipAlert} then
         delay ${waitingTime}
         tell application "System Events"
-          tell process "MarginNote 3"
+          tell process "MarginNote 4"
             key code 36
           end tell
         end tell
@@ -202,8 +202,8 @@ export async function creatNote(
 
     on openNote(nt, nb)
       if nt is not "" then
-        open location "marginnote3app://notebook/" & nb
-        open location "marginnote3app://note/" & nt
+        open location "marginnote4app://notebook/" & nb
+        open location "marginnote4app://note/" & nt
         ""
       else
         "error"
@@ -223,7 +223,7 @@ export async function creatNote(
     end isActive
 
     on create()
-      tell application "MarginNote 3"
+      tell application "MarginNote 4"
         set n to (fetch note "${parentNoteid}")
         if n is not missing value then
           set nb to notebook of n
@@ -253,7 +253,7 @@ export async function creatNote(
       end tell
     end creat
 
-    if not isRunning("MarginNote 3") then
+    if not isRunning("MarginNote 4") then
       openMN()
       set info to create()
       openNote(noteid of info, notebookid of info)

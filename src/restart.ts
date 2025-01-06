@@ -4,10 +4,10 @@ import { restartMN } from "./utils/applescript"
 
 export default async function () {
   if (await isMarginNoteInstalled()) {
-    await showHUD("Restarting MarginNote 3...")
+    await showHUD("Restarting MarginNote 4...")
     await closeMainWindow()
     await restartMN()
   } else
-    showToast(Toast.Style.Failure, "Error", "MarginNote 3 is not installed")
+    showToast(Toast.Style.Failure, "Error", "MarginNote 4 is not installed")
   return null
 }

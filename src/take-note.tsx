@@ -49,7 +49,7 @@ const parentNotes = [
   if (!k) return acc
   k = k.trim()
   const title = k.match(/^(.+)=marginnote/)
-  const id = k.match(/marginnote3app:\/\/note\/(.+)$/)
+  const id = k.match(/marginnote4app:\/\/note\/(.+)$/)
   if (!id) return acc
   acc.push({
     title: "Create to " + (title ? title[1] : "Parent Note " + (i + 1)),
@@ -138,7 +138,7 @@ export default function (props: { draftValues?: FormType }) {
 
   async function alertError() {
     if (!(await isMarginNoteInstalled())) {
-      showToast(Toast.Style.Failure, "Error", "MarginNote 3 is not installed")
+      showToast(Toast.Style.Failure, "Error", "MarginNote 4 is not installed")
       return true
     } else if (parentNotes.length === 0) {
       showToast(

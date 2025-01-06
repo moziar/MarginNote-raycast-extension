@@ -10,4 +10,4 @@ export function escape(str: string) {
 export const unique = <T>(arr: T[]): T[] => Array.from(new Set(arr))
 
 export const isMarginNoteInstalled = async () =>
-  (await getApplications()).find(k => k.name === "MarginNote 3") !== undefined
+  (await getApplications()).find(k => k.name === "MarginNote 4") !== undefined
