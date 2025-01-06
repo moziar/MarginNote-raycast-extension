@@ -1,7 +1,20 @@
 # Raycast Extension of MarginNote
 [ [English](./README.md) ]
-## Usage
 
+## Installation
+### use the `.zip` file
+1. 从[发布页面](https://github.com/moziar/MarginNote-raycast-extension/releases)下载 `.zip` 文件。
+2. 解压 `.zip` 文件。
+3. 使用 Raycast 命令 `Import Extension` 来安装扩展。
+
+### Build from source
+1. 克隆这个仓库。
+2. 确保你已经安装了 [node.js](https://nodejs.org/en/download/) 和 [npm](https://www.npmjs.com/get-npm)。
+3. 运行 `npm install @raycast/api` 来安装 Raycast API。
+4. 运行 `npm run build` 来构建扩展。
+5. 使用 Raycast 命令 `Import Extension` 并选择 `dist` 文件夹来安装扩展。
+
+## Usage
 ### First of All
 有两个选项可以帮助您在通过此扩展打开 MarginNote 时自动跳过未签名插件的警告。
 

@@ -1,5 +1,19 @@
 # Raycast Extension of MarginNote
 [ [简体中文](./README-ZH.md) ]
+
+## Installation
+### Use the `.zip` file
+1. Download the `.zip` file from the [release page](https://github.com/moziar/MarginNote-raycast-extension/releases).
+2. release the `.zip` file.
+3. Use the Raycast Command `Import Extension` to install the extension.
+
+### Build from source
+1. Clone this repository.
+2. make sure you've installed [node.js](https://nodejs.org/en/download/) and [npm](https://www.npmjs.com/get-npm).
+3. run `npm install @raycast/api` to install the Raycast API.
+4. run `npm run build` to build the extension.
+5. Use the Raycast Command `Import Extension` and choose the `dist` folder to install the extension.
+
 ## Usage
 ### First of All
 There are options to help you automatically skip alerts for unsigned mnaddon when opening MarginNote through this extension.
