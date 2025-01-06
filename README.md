@@ -23,7 +23,7 @@ There are options to help you automatically skip alerts for unsigned mnaddon whe
 ### Search Notebook
 > **Note**
 >
-> Please install [Raycast Enhance](https://github.com/marginnoteapp/raycast-enhance/releases) addon and latest MarginNote 3 (^3.7.21). If the `Raycast Enhance` addon is still uncerfitied, maybe you need turn `Allow uncertified extensions` on in MarginNote.
+> Please install [Raycast Enhance](https://github.com/marginnoteapp/raycast-enhance/releases) addon and latest MarginNote 4. If the `Raycast Enhance` addon is still uncerfitied, maybe you need turn `Allow uncertified extensions` on in MarginNote.
 > ![](https://testmnbbs.oss-cn-zhangjiakou.aliyuncs.com/pic/20221116020801.png?x-oss-process=base_webp)
 
 Search notebook by name and Open directly. Support mindmap noteboook and flashcard notebook.

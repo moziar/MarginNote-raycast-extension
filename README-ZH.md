@@ -24,7 +24,7 @@
 ### Search Notebook
 > **Note**
 >
-> 需要安装 [Raycast Enhance](https://github.com/marginnoteapp/raycast-enhance/releases) 插件和最新版本 MarginNote3（^3.7.21）。
+> 需要安装 [Raycast Enhance](https://github.com/marginnoteapp/raycast-enhance/releases) 插件和最新版本 MarginNote 4。
 
 通过名字搜索笔记本，并且直接打开。支持脑图笔记本和卡片组笔记本。
 
